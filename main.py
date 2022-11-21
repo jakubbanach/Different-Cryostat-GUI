@@ -5,7 +5,22 @@ from PyQt6.QtWidgets import (QApplication, QCheckBox, QComboBox, QDateTimeEdit,
         QDial, QDialog, QGridLayout, QGroupBox, QHBoxLayout, QLabel, QLineEdit,
         QProgressBar, QPushButton, QRadioButton, QScrollBar, QSizePolicy,
         QSlider, QSpinBox, QStyleFactory, QTableWidget, QTabWidget, QTextEdit,
-        QVBoxLayout, QWidget)
+        QVBoxLayout, QWidget, QToolBar, QStatusBar, QMainWindow)
+from PyQt6.QtGui import QIcon, QAction
+
+
+class Window(QMainWindow):
+    # Snip...
+    def _createToolBars(self):
+        # Using a title
+        fileToolBar = self.addToolBar("File")
+        # Using a QToolBar object
+        editToolBar = QToolBar("Edit", self)
+        self.addToolBar(editToolBar)
+        # Using a QToolBar object and a toolbar area
+        helpToolBar = QToolBar("Help", self)
+        self.addToolBar(Qt.LeftToolBarArea, helpToolBar)
+
 
 class App(QDialog):
     def __init__(self, parent=None):
@@ -90,3 +105,11 @@ if __name__ == '__main__':
     window.resize(1600, 1200)
     window.show()
     sys.exit(app.exec())
+
+    #app = QtWidgets.QApplication(sys.argv)
+    #ex = Ui_MainWindow()
+    #w = QtWidgets.QMainWindow()
+    #ex.setupUi(w)
+    #w.show()
+    #sys.exit(app.exec_())
+        
