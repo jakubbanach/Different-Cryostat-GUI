@@ -6,15 +6,16 @@ from PyQt6.QtWidgets import (QApplication, QCheckBox, QComboBox, QDateTimeEdit,
                              QSlider, QSpinBox, QStyleFactory, QTableWidget, QTabWidget, QTextEdit,
                              QVBoxLayout, QWidget, QInputDialog, QFileDialog, QMainWindow, QTableWidgetItem)
 
-#import datFileRead as dfr
+
 from random import randint
 import pandas as pd
-
+from live_graph import LiveGraph
 
 class App(QDialog):
     def __init__(self):
         super(App, self).__init__()
         self.initUI()
+
 
     def initUI(self):
         QApplication.setStyle('windowsvista')
@@ -53,7 +54,6 @@ class App(QDialog):
         self.setLayout(mainLayout)
 
 
-    # functions must be here??
     def openFile(self):
         try:
             self.path = QFileDialog.getOpenFileName()[0]
@@ -132,8 +132,11 @@ class App(QDialog):
 
         checkBox = QCheckBox("test")
 
+        graph = LiveGraph()
+
         layout = QHBoxLayout()
         layout.addWidget(checkBox)
+        layout.addWidget(graph.GraphWidget)
         layout.addStretch(1)
         self.bottomRightGroupBox.setLayout(layout)
 
