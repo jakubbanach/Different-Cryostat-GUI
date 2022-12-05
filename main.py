@@ -35,7 +35,7 @@ class App(QDialog):
         menuButton3.setDefault(True)
 
         self.createTopLeftGroupBox()
-        # self.createTopRightGroupBox()
+        self.createTopRightGroupBox()
         # self.createBottomLeftTabWidget()
         self.createBottomRightGroupBox()
 
@@ -46,9 +46,10 @@ class App(QDialog):
         topLayout.addStretch(1)
 
         mainLayout = QGridLayout()
-        mainLayout.addLayout(topLayout, 0, 0, 1, 2)
+        mainLayout.addLayout(topLayout, 0, 0, 2, 2)
         mainLayout.addWidget(self.topLeftGroupBox, 1, 0)
         mainLayout.addWidget(self.bottomRightGroupBox, 1, 1)
+        mainLayout.addWidget(self.topRightGroupBox, 2, 0)
         mainLayout.setRowStretch(1, 1)
         # mainLayout.setRowStretch(2, 1)
         # mainLayout.setColumnStretch(0, 1)
@@ -94,6 +95,16 @@ class App(QDialog):
 
         QTimer.singleShot(1000, self.dataLoad)
         print('Hello')
+
+
+    def createTopRightGroupBox(self):
+        self.topRightGroupBox = QGroupBox('top right')
+        self.wykres = exampleGraph()
+
+        layout = QHBoxLayout()
+        layout.addWidget(self.wykres)
+        layout.addStretch(1)
+        self.topRightGroupBox.setLayout(layout)
 
 
     def createTopLeftGroupBox(self):
