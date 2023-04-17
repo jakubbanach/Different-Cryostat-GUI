@@ -1,14 +1,24 @@
 from PyQt6.QtCore import QDateTime, Qt, QTimer
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import (QApplication, QCheckBox, QComboBox, QDateTimeEdit,
-                             QDial, QDialog, QGridLayout, QGroupBox, QHBoxLayout, QLabel, QLineEdit,
-                             QProgressBar, QPushButton, QRadioButton, QScrollBar, QSizePolicy,
-                             QSlider, QSpinBox, QStyleFactory, QTableWidget, QTabWidget, QTextEdit,
-                             QVBoxLayout, QWidget, QInputDialog, QFileDialog, QMainWindow, QTableWidgetItem)
+        QDial, QDialog, QGridLayout, QGroupBox, QHBoxLayout, QLabel, QLineEdit,
+        QProgressBar, QPushButton, QRadioButton, QScrollBar, QSizePolicy,
+        QSlider, QSpinBox, QStyleFactory, QTableWidget, QTabWidget, QTextEdit,
+        QVBoxLayout, QWidget, QToolBar, QStatusBar, QMainWindow)
+from PyQt6.QtGui import QIcon, QAction
 
-#import datFileRead as dfr
-from random import randint
-import pandas as pd
+
+class Window(QMainWindow):
+    # Snip...
+    def _createToolBars(self):
+        # Using a title
+        fileToolBar = self.addToolBar("File")
+        # Using a QToolBar object
+        editToolBar = QToolBar("Edit", self)
+        self.addToolBar(editToolBar)
+        # Using a QToolBar object and a toolbar area
+        helpToolBar = QToolBar("Help", self)
+        self.addToolBar(Qt.LeftToolBarArea, helpToolBar)
 
 
 class App(QDialog):
@@ -146,3 +156,11 @@ if __name__ == '__main__':
     window.resize(800, 600)
     window.show()
     sys.exit(app.exec())
+
+    #app = QtWidgets.QApplication(sys.argv)
+    #ex = Ui_MainWindow()
+    #w = QtWidgets.QMainWindow()
+    #ex.setupUi(w)
+    #w.show()
+    #sys.exit(app.exec_())
+        
