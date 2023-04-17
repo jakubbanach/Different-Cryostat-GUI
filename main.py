@@ -1,12 +1,15 @@
 from PyQt6.QtCore import QDateTime, Qt, QTimer
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import (QApplication, QCheckBox, QComboBox, QDateTimeEdit,
-        QDial, QDialog, QGridLayout, QGroupBox, QHBoxLayout, QLabel, QLineEdit,
+        QDial, QDialog, QFileDialog, QGridLayout, QGroupBox, QHBoxLayout, QLabel, QLineEdit,
         QProgressBar, QPushButton, QRadioButton, QScrollBar, QSizePolicy,
-        QSlider, QSpinBox, QStyleFactory, QTableWidget, QTabWidget, QTextEdit,
+        QSlider, QSpinBox, QStyleFactory, QTableWidget, QTableWidgetItem, QTabWidget, QTextEdit,
         QVBoxLayout, QWidget, QToolBar, QStatusBar, QMainWindow)
 from PyQt6.QtGui import QIcon, QAction
 
+import pandas as pd
+import numpy as np
+import pyqtgraph as pg
 
 class Window(QMainWindow):
     # Snip...
@@ -73,26 +76,34 @@ class App(QDialog):
 
 
     def updateText(self):
-        random_text = randint(0, 100)
+        random_text = np.random.randint(0, 100)
         self.label.setText("Your random number is %d" % random_text)
         self.label.adjustSize()
+        # T[C] Ux[V]
+        self.col1 = self.allData[self.columns[0]].to_numpy()
+        self.col2 = self.allData[self.columns[2]].to_numpy()
+        print(type(self.col1))
+        print(type(self.col2))
+        # T_A[K] T_B[K] CNT sr860x[V] sr860y[V] sr860f[Hz] sr860sin[V]
+        self.graphWidget.plot(self.col1, self.col2)
 
     def updateText1(self, string):
         self.label.setText("Your file: %s" % string)
         self.label.adjustSize()
 
     def dataLoad(self):
-        all_data = pd.read_csv(self.path, delimiter=' ')
-        if all_data.size == 0:
+        self.allData = pd.read_csv(self.path, delimiter=' ')
+        if self.allData.size == 0:
             return
-        all_data.fillna('', inplace=True)
-        print(all_data)
+        self.allData.fillna('', inplace=True)
+        self.columns = self.allData.columns.tolist()
+        print(self.columns)
 
-        self.tableWidget.setRowCount(all_data.shape[0])
-        self.tableWidget.setColumnCount(all_data.shape[1])
-        self.tableWidget.setHorizontalHeaderLabels(all_data.columns)
+        self.tableWidget.setRowCount(self.allData.shape[0])
+        self.tableWidget.setColumnCount(self.allData.shape[1])
+        self.tableWidget.setHorizontalHeaderLabels(self.allData.columns)
 
-        for row in all_data.iterrows():
+        for row in self.allData.iterrows():
             values = row[1]
             for col_index, value in enumerate(values):
                 if isinstance(value, (float, int)):
@@ -100,8 +111,8 @@ class App(QDialog):
                 tableItem = QTableWidgetItem(str(value))
                 self.tableWidget.setItem(row[0], col_index, tableItem)
 
-        QTimer.singleShot(1000, self.dataLoad)
-        print('Hello')
+        QTimer.singleShot(5000, self.dataLoad)
+        print('reading all data')
 
     def createTopLeftGroupBox(self):
         self.topLeftGroupBox = QGroupBox("Select data:")
@@ -122,7 +133,7 @@ class App(QDialog):
         self.showButton = QPushButton("&Show")
         self.showButton.clicked.connect(self.dataLoad)
 
-        self.testButton = QPushButton("&Test")
+        self.testButton = QPushButton("&Plot")
         self.testButton.clicked.connect(self.updateText)
 
         layout = QVBoxLayout()
@@ -142,8 +153,17 @@ class App(QDialog):
 
         checkBox = QCheckBox("test")
 
+        self.x = list(range(100))  # 100 time points
+        self.y = [np.random.randint(0, 100) for _ in range(100)]  # 100 data points
+        self.graphWidget = pg.PlotWidget()
+        self.graphWidget.setBackground('w')
+        # pen = pg.mkPen(color=(255, 0, 0))
+        # self.data_line = self.graphWidget.plot(self.x, self.y, pen=pen)
+
+
         layout = QHBoxLayout()
         layout.addWidget(checkBox)
+        layout.addWidget(self.graphWidget)
         layout.addStretch(1)
         self.bottomRightGroupBox.setLayout(layout)
 
