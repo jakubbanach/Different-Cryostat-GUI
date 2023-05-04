@@ -3,15 +3,19 @@ from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import (QApplication, QCheckBox, QComboBox, QDateTimeEdit,
         QDial, QDialog, QFileDialog, QGridLayout, QGroupBox, QHBoxLayout, QLabel, QLineEdit,
         QProgressBar, QPushButton, QRadioButton, QScrollBar, QSizePolicy,
-        QSlider, QSpinBox, QStyleFactory, QTableWidget, QTableWidgetItem, QTabWidget, QTextEdit,
-        QVBoxLayout, QWidget, QToolBar, QStatusBar, QMainWindow)
+        QSlider, QSpinBox, QStyleFactory, QTableWidget, QTabWidget, QTextEdit,
+        QVBoxLayout, QWidget, QToolBar, QStatusBar, QMainWindow, QFileDialog, QTableWidgetItem)
 from PyQt6.QtGui import QIcon, QAction
+import pandas as pd
+import random
+import time
 
 import pandas as pd
 import numpy as np
 import pyqtgraph as pg
 
 class Window(QMainWindow):
+
     # Snip...
     def _createToolBars(self):
         # Using a title
@@ -30,6 +34,7 @@ class App(QDialog):
         self.initUI()
 
     def initUI(self):
+        # adding different styles?
         QApplication.setStyle('windowsvista')
         self.originalPalette = QApplication.palette()
         self.setWindowTitle('DATAPLOT')
@@ -70,14 +75,22 @@ class App(QDialog):
     def openFile(self):
         try:
             self.path = QFileDialog.getOpenFileName()[0]
-            self.updateText1(self.path)
+            self.updateTextTable(self.path)
+            # try:
+            #     all_data = pd.read_csv(self.path, delimiter=' ')
+            #     self.tableWidget.setRowCount(all_data.shape[0])
+            #     self.tableWidget.setColumnCount(all_data.shape[1])
+            #     self.tableWidget.setHorizontalHeaderLabels(all_data.columns)
+            # except:
+            #     print("File not exist")
         except:
+            ### maybe print only the last part of the path?
             print(self.path)
 
-
     def updateText(self):
-        random_text = np.random.randint(0, 100)
-        self.label.setText("Your random number is %d" % random_text)
+        #random_text = random.randint(0, 100)
+        #self.label.setText("Your random number is %d" % random_text)
+        self.label.setText("Stop reading file: "+ self.path)
         self.label.adjustSize()
         # T[C] Ux[V]
         self.col1 = self.allData[self.columns[0]].to_numpy()
@@ -87,8 +100,8 @@ class App(QDialog):
         # T_A[K] T_B[K] CNT sr860x[V] sr860y[V] sr860f[Hz] sr860sin[V]
         self.graphWidget.plot(self.col1, self.col2)
 
-    def updateText1(self, string):
-        self.label.setText("Your file: %s" % string)
+    def updateTextTable(self, string):
+        self.label.setText("Your file: %s" % string) 
         self.label.adjustSize()
 
     def dataLoad(self):
@@ -113,6 +126,62 @@ class App(QDialog):
 
         QTimer.singleShot(5000, self.dataLoad)
         print('reading all data')
+        try:
+            all_data = pd.read_csv(self.path, delimiter=' ')
+        # except:
+        #     print("No data loaded")
+            if all_data.size == 0:
+                return
+            all_data.fillna('', inplace=True)
+
+            self.tableWidget.setRowCount(all_data.shape[0]+1)
+            self.tableWidget.setColumnCount(all_data.shape[1])
+            self.tableWidget.setHorizontalHeaderLabels(all_data.columns)
+            numbersOfRows = self.tableWidget.rowCount()
+            print(numbersOfRows)
+            for row in all_data.iterrows():
+                values = row[1]
+                for col_index, value in enumerate(values):
+                    if isinstance(value, (float, int)):
+                        value = '{0:0,.8f}'.format(value)
+                    tableItem = QTableWidgetItem(str(value))
+                    self.tableWidget.setItem(row[0], col_index, tableItem)
+            print(all_data)
+            print("Loaded: ")
+            #Rekurencyjne wykonywanie funkcji
+            QTimer.singleShot(5000, self.afterFileIsLoaded(all_data))
+        except:
+            print("No data loaded")
+
+    def afterFileIsLoaded(self, all_data):
+        print("HERE WILL BE A RECURENT FUNCTION, SO THAT WE WILL NOT USE WHILE")
+        time.sleep(10)
+        numbersOfRows = self.tableWidget.rowCount()
+        try:
+            #loading file once again, but only last new rows
+            new_data = pd.read_csv(self.path, delimiter=' ', skiprows=numbersOfRows, names=all_data.columns)
+        except:
+            print("something wrong")
+            time.sleep(10)
+        #the size of the file doesnt change
+        if new_data.size == 0:
+            print("Nothing changed")
+        else:
+            new_data.fillna('', inplace=True)
+            print(new_data)
+            self.tableWidget.setRowCount(new_data.shape[0] + numbersOfRows)
+            for row in new_data.iterrows():
+                values = row[1]
+                for col_index, value in enumerate(values):
+                    if isinstance(value, (float, int)):
+                        value = '{0:0,.8f}'.format(value)
+                    tableItem = QTableWidgetItem(str(value))
+                    self.tableWidget.setItem(row[0]+numbersOfRows, col_index, tableItem)
+            all_data = all_data.append(new_data, ignore_index = True)
+        print(all_data)
+        QTimer.singleShot(5000, self.afterFileIsLoaded(all_data))
+            # all_data = pd.concat([all_data, new_data])
+            # self.tableWidget.setRowCount(all_data.shape[0])
 
     def createTopLeftGroupBox(self):
         self.topLeftGroupBox = QGroupBox("Select data:")
@@ -130,10 +199,11 @@ class App(QDialog):
         self.readButton = QPushButton("&Load Data")
         self.readButton.clicked.connect(self.openFile)
 
+        #ERROR gdy sie kliknie ponownie
         self.showButton = QPushButton("&Show")
         self.showButton.clicked.connect(self.dataLoad)
-
         self.testButton = QPushButton("&Plot")
+        self.testButton = QPushButton("&Stop")
         self.testButton.clicked.connect(self.updateText)
 
         layout = QVBoxLayout()
