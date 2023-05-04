@@ -1,7 +1,7 @@
 from PyQt6.QtCore import QDateTime, Qt, QTimer
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import (QApplication, QCheckBox, QComboBox, QDateTimeEdit,
-        QDial, QDialog, QGridLayout, QGroupBox, QHBoxLayout, QLabel, QLineEdit,
+        QDial, QDialog, QFileDialog, QGridLayout, QGroupBox, QHBoxLayout, QLabel, QLineEdit,
         QProgressBar, QPushButton, QRadioButton, QScrollBar, QSizePolicy,
         QSlider, QSpinBox, QStyleFactory, QTableWidget, QTabWidget, QTextEdit,
         QVBoxLayout, QWidget, QToolBar, QStatusBar, QMainWindow, QFileDialog, QTableWidgetItem)
@@ -10,6 +10,9 @@ import pandas as pd
 import random
 import time
 
+import pandas as pd
+import numpy as np
+import pyqtgraph as pg
 
 class Window(QMainWindow):
 
@@ -35,7 +38,7 @@ class App(QDialog):
         QApplication.setStyle('windowsvista')
         self.originalPalette = QApplication.palette()
         self.setWindowTitle('DATAPLOT')
-        self.setWindowIcon(QIcon('./agh.jpg'))
+        self.setWindowIcon(QIcon('./agh.png'))
 
         menuButton1 = QPushButton("File")
         menuButton1.setDefault(True)
@@ -89,12 +92,48 @@ class App(QDialog):
         #self.label.setText("Your random number is %d" % random_text)
         self.label.setText("Stop reading file: "+ self.path)
         self.label.adjustSize()
+        # T[C] Ux[V]
+        self.col1 = self.allData[self.columns[0]].to_numpy()
+        self.col2 = self.allData[self.columns[2]].to_numpy()
+        print(type(self.col1))
+        print(type(self.col2))
+        # T_A[K] T_B[K] CNT sr860x[V] sr860y[V] sr860f[Hz] sr860sin[V]
+        self.graphWidget.plot(self.col1, self.col2)
+
+    def makeGraph(self):
+        x = self.xCombo.currentText()
+        y = self.yCombo.currentText()
+        self.graphWidget.plot(self.allData[x].to_numpy(), self.allData[y].to_numpy())
 
     def updateTextTable(self, string):
-        self.label.setText("Your file: %s" % string) 
+        self.label.setText("Your file: %s" % string.rpartition('/')[-1])
         self.label.adjustSize()
 
     def dataLoad(self):
+        self.allData = pd.read_csv(self.path, delimiter=' ')
+        if self.allData.size == 0:
+            return
+        self.allData.fillna('', inplace=True)
+        self.columns = self.allData.columns.tolist()
+        self.headers = self.allData.columns.values.tolist()
+        print(self.columns)
+        self.xCombo.addItems(self.headers)
+        self.yCombo.addItems(self.headers)
+
+        self.tableWidget.setRowCount(self.allData.shape[0])
+        self.tableWidget.setColumnCount(self.allData.shape[1])
+        self.tableWidget.setHorizontalHeaderLabels(self.allData.columns)
+
+        for row in self.allData.iterrows():
+            values = row[1]
+            for col_index, value in enumerate(values):
+                if isinstance(value, (float, int)):
+                    value = '{0:0,.8f}'.format(value)
+                tableItem = QTableWidgetItem(str(value))
+                self.tableWidget.setItem(row[0], col_index, tableItem)
+
+        # QTimer.singleShot(5000, self.dataLoad)
+        print('reading all data')
         try:
             all_data = pd.read_csv(self.path, delimiter=' ')
         # except:
@@ -116,9 +155,11 @@ class App(QDialog):
                     tableItem = QTableWidgetItem(str(value))
                     self.tableWidget.setItem(row[0], col_index, tableItem)
             print(all_data)
+            # headers = all_data.columns.values.tolist()
+            # print(headers)
             print("Loaded: ")
-            #Rekurencyjne wykonywanie funkcji
-            QTimer.singleShot(5000, self.afterFileIsLoaded(all_data))
+            # Rekurencyjne wykonywanie funkcji
+            # QTimer.singleShot(5000, self.afterFileIsLoaded(all_data))
         except:
             print("No data loaded")
 
@@ -148,7 +189,7 @@ class App(QDialog):
                     self.tableWidget.setItem(row[0]+numbersOfRows, col_index, tableItem)
             all_data = all_data.append(new_data, ignore_index = True)
         print(all_data)
-        QTimer.singleShot(5000, self.afterFileIsLoaded(all_data))
+        # QTimer.singleShot(5000, self.afterFileIsLoaded(all_data))
             # all_data = pd.concat([all_data, new_data])
             # self.tableWidget.setRowCount(all_data.shape[0])
 
@@ -171,9 +212,12 @@ class App(QDialog):
         #ERROR gdy sie kliknie ponownie
         self.showButton = QPushButton("&Show")
         self.showButton.clicked.connect(self.dataLoad)
-
+        self.testButton = QPushButton("&Plot")
         self.testButton = QPushButton("&Stop")
         self.testButton.clicked.connect(self.updateText)
+
+        self.xCombo = QComboBox()
+        self.yCombo = QComboBox()
 
         layout = QVBoxLayout()
         layout.addWidget(radioButton1)
@@ -184,6 +228,8 @@ class App(QDialog):
         layout.addWidget(self.testButton)
         layout.addWidget(self.label)
         layout.addWidget(self.tableWidget)
+        layout.addWidget(self.xCombo)
+        layout.addWidget(self.yCombo)
         layout.addStretch(1)
         self.topLeftGroupBox.setLayout(layout)
 
@@ -192,8 +238,20 @@ class App(QDialog):
 
         checkBox = QCheckBox("test")
 
+        self.x = list(range(100))  # 100 time points
+        self.y = [np.random.randint(0, 100) for _ in range(100)]  # 100 data points
+        self.graphWidget = pg.PlotWidget()
+        self.graphWidget.setBackground('w')
+        # pen = pg.mkPen(color=(255, 0, 0))
+        # self.data_line = self.graphWidget.plot(self.x, self.y, pen=pen)
+
+        self.plotButton = QPushButton("&Plot Data")
+        self.plotButton.clicked.connect(self.makeGraph)
+
         layout = QHBoxLayout()
         layout.addWidget(checkBox)
+        layout.addWidget(self.graphWidget)
+        layout.addWidget(self.plotButton)
         layout.addStretch(1)
         self.bottomRightGroupBox.setLayout(layout)
 
