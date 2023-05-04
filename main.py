@@ -38,7 +38,7 @@ class App(QDialog):
         QApplication.setStyle('windowsvista')
         self.originalPalette = QApplication.palette()
         self.setWindowTitle('DATAPLOT')
-        self.setWindowIcon(QIcon('./agh.png'))
+        self.setWindowIcon(QIcon('./agh.jpg'))
 
         menuButton1 = QPushButton("File")
         menuButton1.setDefault(True)
@@ -100,13 +100,8 @@ class App(QDialog):
         # T_A[K] T_B[K] CNT sr860x[V] sr860y[V] sr860f[Hz] sr860sin[V]
         self.graphWidget.plot(self.col1, self.col2)
 
-    def makeGraph(self):
-        x = self.xCombo.currentText()
-        y = self.yCombo.currentText()
-        self.graphWidget.plot(self.allData[x].to_numpy(), self.allData[y].to_numpy())
-
     def updateTextTable(self, string):
-        self.label.setText("Your file: %s" % string.rpartition('/')[-1])
+        self.label.setText("Your file: %s" % string) 
         self.label.adjustSize()
 
     def dataLoad(self):
@@ -115,10 +110,7 @@ class App(QDialog):
             return
         self.allData.fillna('', inplace=True)
         self.columns = self.allData.columns.tolist()
-        self.headers = self.allData.columns.values.tolist()
         print(self.columns)
-        self.xCombo.addItems(self.headers)
-        self.yCombo.addItems(self.headers)
 
         self.tableWidget.setRowCount(self.allData.shape[0])
         self.tableWidget.setColumnCount(self.allData.shape[1])
@@ -132,7 +124,7 @@ class App(QDialog):
                 tableItem = QTableWidgetItem(str(value))
                 self.tableWidget.setItem(row[0], col_index, tableItem)
 
-        # QTimer.singleShot(5000, self.dataLoad)
+        QTimer.singleShot(5000, self.dataLoad)
         print('reading all data')
         try:
             all_data = pd.read_csv(self.path, delimiter=' ')
@@ -155,11 +147,9 @@ class App(QDialog):
                     tableItem = QTableWidgetItem(str(value))
                     self.tableWidget.setItem(row[0], col_index, tableItem)
             print(all_data)
-            # headers = all_data.columns.values.tolist()
-            # print(headers)
             print("Loaded: ")
-            # Rekurencyjne wykonywanie funkcji
-            # QTimer.singleShot(5000, self.afterFileIsLoaded(all_data))
+            #Rekurencyjne wykonywanie funkcji
+            QTimer.singleShot(5000, self.afterFileIsLoaded(all_data))
         except:
             print("No data loaded")
 
@@ -189,7 +179,7 @@ class App(QDialog):
                     self.tableWidget.setItem(row[0]+numbersOfRows, col_index, tableItem)
             all_data = all_data.append(new_data, ignore_index = True)
         print(all_data)
-        # QTimer.singleShot(5000, self.afterFileIsLoaded(all_data))
+        QTimer.singleShot(5000, self.afterFileIsLoaded(all_data))
             # all_data = pd.concat([all_data, new_data])
             # self.tableWidget.setRowCount(all_data.shape[0])
 
@@ -216,9 +206,6 @@ class App(QDialog):
         self.testButton = QPushButton("&Stop")
         self.testButton.clicked.connect(self.updateText)
 
-        self.xCombo = QComboBox()
-        self.yCombo = QComboBox()
-
         layout = QVBoxLayout()
         layout.addWidget(radioButton1)
         layout.addWidget(radioButton2)
@@ -228,8 +215,6 @@ class App(QDialog):
         layout.addWidget(self.testButton)
         layout.addWidget(self.label)
         layout.addWidget(self.tableWidget)
-        layout.addWidget(self.xCombo)
-        layout.addWidget(self.yCombo)
         layout.addStretch(1)
         self.topLeftGroupBox.setLayout(layout)
 
@@ -245,13 +230,10 @@ class App(QDialog):
         # pen = pg.mkPen(color=(255, 0, 0))
         # self.data_line = self.graphWidget.plot(self.x, self.y, pen=pen)
 
-        self.plotButton = QPushButton("&Plot Data")
-        self.plotButton.clicked.connect(self.makeGraph)
 
         layout = QHBoxLayout()
         layout.addWidget(checkBox)
         layout.addWidget(self.graphWidget)
-        layout.addWidget(self.plotButton)
         layout.addStretch(1)
         self.bottomRightGroupBox.setLayout(layout)
 
