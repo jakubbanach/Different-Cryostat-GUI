@@ -1,14 +1,13 @@
 from PyQt6.QtCore import QDateTime, Qt, QTimer
-from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import (QApplication, QCheckBox, QComboBox, QDateTimeEdit,
         QDial, QDialog, QFileDialog, QGridLayout, QGroupBox, QHBoxLayout, QLabel, QLineEdit,
         QProgressBar, QPushButton, QRadioButton, QScrollBar, QSizePolicy,
         QSlider, QSpinBox, QStyleFactory, QTableWidget, QTabWidget, QTextEdit,
         QVBoxLayout, QWidget, QToolBar, QStatusBar, QMainWindow, QFileDialog, QTableWidgetItem)
-from PyQt6.QtGui import QIcon, QAction
-import pandas as pd
+from PyQt6.QtGui import QIcon, QAction, QFont
 import random
 import time
+
 
 import pandas as pd
 import numpy as np
@@ -71,6 +70,10 @@ class App(QDialog):
         self.setLayout(mainLayout)
 
 
+    def movingAvg(self, data, window_length = 25):
+        return np.convolve(data, np.ones(window_length), 'valid') / window_length
+
+
     # functions must be here??
     def openFile(self):
         try:
@@ -101,9 +104,23 @@ class App(QDialog):
         self.graphWidget.plot(self.col1, self.col2)
 
     def makeGraph(self):
-        x = self.xCombo.currentText()
-        y = self.yCombo.currentText()
-        self.graphWidget.plot(self.allData[x].to_numpy(), self.allData[y].to_numpy())
+        self.graphWidget.clear()
+        x = self.allData[self.xCombo.currentText()].to_numpy()
+        y = self.allData[self.yCombo.currentText()].to_numpy()
+
+        self.graphWidget.setXRange(0.99 * min(x), 1.01 * max(x))
+        self.graphWidget.setYRange(0.99 * min(y), 1.01 * max(y))
+
+        scatter = pg.ScatterPlotItem(size=5, brush=pg.mkBrush(0, 0, 255))
+        scatter.setData(x, y)
+        self.graphWidget.addItem(scatter)
+
+        pen = pg.mkPen(color=(255, 0, 0), width=2)
+        self.graphWidget.plot(self.movingAvg(x), self.movingAvg(y), pen=pen)
+
+        self.graphWidget.setLabel('left', self.yCombo.currentText(), **{'color': 'b', 'font-size': '16px'})
+        self.graphWidget.setLabel('bottom', self.xCombo.currentText(), **{'color': 'b', 'font-size': '16px'})
+        self.graphWidget.addLegend()
 
     def updateTextTable(self, string):
         self.label.setText("Your file: %s" % string.rpartition('/')[-1])
@@ -114,6 +131,7 @@ class App(QDialog):
         if self.allData.size == 0:
             return
         self.allData.fillna('', inplace=True)
+        # self.allData.replace("~!@#$%^&*()=+~\|}{';:- /?>,<", "")
         self.columns = self.allData.columns.tolist()
         self.headers = self.allData.columns.values.tolist()
         print(self.columns)
@@ -238,12 +256,23 @@ class App(QDialog):
 
         checkBox = QCheckBox("test")
 
-        self.x = list(range(100))  # 100 time points
-        self.y = [np.random.randint(0, 100) for _ in range(100)]  # 100 data points
         self.graphWidget = pg.PlotWidget()
+
+        font = QFont()
+        font.setPointSize(16)
+        font.setBold(True)
+
         self.graphWidget.setBackground('w')
-        # pen = pg.mkPen(color=(255, 0, 0))
-        # self.data_line = self.graphWidget.plot(self.x, self.y, pen=pen)
+        self.graphWidget.showGrid(x=True, y=True)
+        self.graphWidget.getAxis('left').setPen('k')
+        self.graphWidget.getAxis('left').setTextPen('k')
+        self.graphWidget.getAxis('left').setFont(font)
+        self.graphWidget.getAxis('bottom').setPen('k')
+        self.graphWidget.getAxis('bottom').setTextPen('k')
+        self.graphWidget.getAxis('bottom').setFont(font)
+
+
+
 
         self.plotButton = QPushButton("&Plot Data")
         self.plotButton.clicked.connect(self.makeGraph)
