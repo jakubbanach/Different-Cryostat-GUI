@@ -1,0 +1,5 @@
+Name,Age,Wage
+Eirik,27,75000
+John,33,85000
+Janet,25,78000
+Phil,23,66000
