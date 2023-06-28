@@ -9,12 +9,15 @@ import pandas as pd
 import numpy as np
 import pyqtgraph as pg
 import sys
+import time
+from PyQt6.QtGui import QGuiApplication
 
 
 class App(QDialog):
     def __init__(self):
         super(App, self).__init__()
         self.initUI()
+        self.isPlottingGoing = True
 
     def initUI(self):
         # adding different styles?
@@ -131,72 +134,40 @@ class App(QDialog):
                     self.tableItem = QTableWidgetItem(str(value))
                     self.tableWidget.setItem(row[0], col_index, self.tableItem)
 
-            # # QTimer.singleShot(5000, self.dataLoad)
-            # print('reading all data')
-            # try:
-            #     all_data = pd.read_csv(self.pathToFile, delim_whitespace=True, usecols=lambda x: x not in ['yyyy-mm-dd', 'hh:mm:ss.ccccc'])
-            # # except:
-            # #     print("No data loaded")
-            #     if all_data.size == 0:
-            #         return
-            #     all_data.fillna('', inplace=True)
+    def updateGraph(self):
+        self.makeGraph()
+        QGuiApplication.processEvents()     #powoduje, ze wywoluje sie plot w funkcji
+        while self.isPlottingGoing:
+            time.sleep(5)
+            self.numbersOfRows = self.tableWidget.rowCount()
+            try:
+                new_data = pd.read_csv(self.pathToFile, delimiter='[\t |,]', usecols=lambda x: x not in ['yyyy-mm-dd', 'hh:mm:ss.ccccc'], engine='python', skiprows=self.numbersOfRows, names=self.allData.columns)
+            except:
+                print("Error in reading new file")
+                time.sleep(10)
+            if new_data.size != 0:
+                new_data.fillna('', inplace=True)
+                self.tableWidget.setRowCount(new_data.shape[0] + self.numbersOfRows)
 
-            #     self.tableWidget.setRowCount(all_data.shape[0]+1)
-            #     self.tableWidget.setColumnCount(all_data.shape[1])
-            #     self.tableWidget.setHorizontalHeaderLabels(all_data.columns)
-            #     self.numbers_of_rows = self.tableWidget.rowCount()
-            #     print(self.numbers_of_rows)
-            #     for row in all_data.iterrows():
-            #         values = row[1]
-            #         for col_index, value in enumerate(values):
-            #             if isinstance(value, (float, int)):
-            #                 value = '{0:0,.8f}'.format(value)
-            #             self.tableItem = QTableWidgetItem(str(value))
-            #             self.tableWidget.setItem(row[0], col_index, self.tableItem)
-            #     # print(all_data)
-            #     # headers = all_data.columns.values.tolist()
-            #     # print(headers)
-            #     print("Loaded: ")
-            #     # Rekurencyjne wykonywanie funkcji
-            #     # QTimer.singleShot(5000, self.afterFileIsLoaded(all_data))
-            # except:
-            #     print("No data loaded")
-
-    # def afterFileIsLoaded(self, all_data):
-    #     print("HERE WILL BE A RECURENT FUNCTION, SO THAT WE WILL NOT USE WHILE")
-    #     time.sleep(10)
-    #     self.numbersOfRows = self.tableWidget.rowCount()
-    #     try:
-    #         #loading file once again, but only last new rows
-    #         new_data = pd.read_csv(self.pathToFile, delimiter=r"\s+", delim_whitespace=True, skiprows=self.numbersOfRows, names=all_data.columns)
-    #     except:
-    #         print("something wrong")
-    #         time.sleep(10)
-    #     #the size of the file doesn't change
-    #     if new_data.size == 0:
-    #         print("Nothing changed")
-    #     else:
-    #         new_data.fillna('', inplace=True)
-    #         print(new_data)
-    #         self.tableWidget.setRowCount(new_data.shape[0] + self.numbersOfRows)
-    #         for row in new_data.iterrows():
-    #             values = row[1]
-    #             for col_index, value in enumerate(values):
-    #                 if isinstance(value, (float, int)):
-    #                     value = '{0:0,.8f}'.format(value)
-    #                 self.tableItem = QTableWidgetItem(str(value))
-    #                 self.tableWidget.setItem(row[0] + self.numbersOfRows, col_index, self.tableItem)
-    #         all_data = all_data.append(new_data, ignore_index = True)
-    #     print(all_data)
-    #     # QTimer.singleShot(5000, self.afterFileIsLoaded(all_data))
-    #         # all_data = pd.concat([all_data, new_data])
-    #         # self.tableWidget.setRowCount(all_data.shape[0])
+                for row in new_data.iterrows():
+                    values = row[1]
+                    for col_index, value in enumerate(values):
+                        if isinstance(value, (float, int)):
+                            value = '{0:0,.8f}'.format(value)
+                        self.tableItem = QTableWidgetItem(str(value))
+                        self.tableWidget.setItem(row[0] + self.numbersOfRows, col_index, self.tableItem)
+                self.allData = pd.concat([self.allData, new_data], ignore_index=True)
+                self.tableWidget.setRowCount(self.allData.shape[0])
+                self.makeGraph()
+                QGuiApplication.processEvents()
+            if self.stopButton.clicked:
+                self.isPlottingGoing = False
 
     def selectDataGroupBox(self):
         self.selectDataWidget = QGroupBox("Select data:")
 
         self.tableWidget = QTableWidget(10, 5)
-
+        
         self.label = QLabel("File:")
         self.pathToFile = ''
 
@@ -215,8 +186,22 @@ class App(QDialog):
 
         self.plotButton = QPushButton("&3. Plot Data")
         self.plotButton.setStyleSheet("background-color: lightgreen; border-color: black; font: bold 14px;")
-        self.plotButton.clicked.connect(self.makeGraph)
 
+        ### tu bylo testowane co sie dzieje po kliknieciu przycisku
+
+        # if self.plotButton.pressed:
+        #     self.makeGraph
+        #     print("After button is pressed")
+        #     time.sleep(5)
+        #     self.makeGraph
+        #     print("After button is pressed")
+        #     time.sleep(5)
+        #     self.makeGraph
+        # ###Tu mozna sprobowac dodac wlasnie i ewentualnie w innych miejscach tego False
+        #     self.isPlottingGoing = True
+
+        self.plotButton.clicked.connect(self.makeGraph)
+        #self.plotButton.clicked.connect(self.updateGraph)  #funkcja do odswiezania wykresow, na razie zakomentowana, zeby pozostale rzeczy dzialaly
         self.stopButton = QPushButton("&4. Stop")
         self.stopButton.clicked.connect(self.stopReadingFile)
         self.stopButton.setStyleSheet("background-color: red; border-color: black; font: bold 14px;")
