@@ -5,7 +5,6 @@ from PyQt6.QtWidgets import (QApplication, QCheckBox, QComboBox, QDateTimeEdit,
         QSlider, QSpinBox, QStyleFactory, QTableWidget, QTabWidget, QTextEdit,
         QVBoxLayout, QWidget, QToolBar, QStatusBar, QMainWindow, QFileDialog, QTableWidgetItem)
 from PyQt6.QtGui import QIcon, QAction, QFont
-import time
 import pandas as pd
 import numpy as np
 import pyqtgraph as pg
@@ -74,6 +73,8 @@ class App(QDialog):
         self.tableWidget.clear()
         self.tableWidget.setRowCount(10)
         self.tableWidget.setColumnCount(5)
+        self.showButton.setStyleSheet("background-color: white; border-color: black; font: bold 14px;")
+
 
     def makeGraph(self):
         self.graphWidget.clear()
@@ -91,6 +92,9 @@ class App(QDialog):
         self.graphWidget.setLabel('left', self.yCombo.currentText(), **{'color': 'b', 'font-size': '16px'})
         self.graphWidget.setLabel('bottom', self.xCombo.currentText(), **{'color': 'b', 'font-size': '16px'})
 
+
+    def clearGraph(self):
+        self.graphWidget.clear()
 
     def updateTextTable(self, fileName):
         if fileName != '':
@@ -117,6 +121,7 @@ class App(QDialog):
             self.tableWidget.setRowCount(self.allData.shape[0])
             self.tableWidget.setColumnCount(self.allData.shape[1])
             self.tableWidget.setHorizontalHeaderLabels(self.allData.columns)
+            self.showButton.setStyleSheet("background-color: yellow; border-color: black; font: bold 14px;")
 
             for row in self.allData.iterrows():
                 values = row[1]
@@ -192,28 +197,34 @@ class App(QDialog):
 
         self.tableWidget = QTableWidget(10, 5)
 
-        self.label = QLabel("File")
+        self.label = QLabel("File:")
         self.pathToFile = ''
 
-        self.readButton = QPushButton("&Load Data")
+        self.readButton = QPushButton("&1. Load Data")
+        self.readButton.setStyleSheet("background-color: white; border-color: black; font: bold 14px;")
         self.readButton.clicked.connect(self.openFile)
 
-        self.showButton = QPushButton("&Show")
+        self.showButton = QPushButton("&2. Show")
+        self.showButton.setStyleSheet("background-color: white; border-color: black; font: bold 14px;")
         self.showButton.clicked.connect(self.dataLoad)
 
-        self.stopButton = QPushButton("&Stop")
-        self.stopButton.clicked.connect(self.stopReadingFile)
-        # self.stopButton.clicked.connect(self.updateTextTable)
-
+        self.xComboLabel = QLabel("Choose X:")
         self.xCombo = QComboBox()
+        self.yComboLabel = QLabel("Choose Y:")
         self.yCombo = QComboBox()
 
-        self.plotButton = QPushButton("&Plot Data")
+        self.plotButton = QPushButton("&3. Plot Data")
+        self.plotButton.setStyleSheet("background-color: lightgreen; border-color: black; font: bold 14px;")
         self.plotButton.clicked.connect(self.makeGraph)
 
+        self.stopButton = QPushButton("&4. Stop")
+        self.stopButton.clicked.connect(self.stopReadingFile)
+        self.stopButton.setStyleSheet("background-color: red; border-color: black; font: bold 14px;")
+        # self.stopButton.clicked.connect(self.updateTextTable)
+
         self.layout = QVBoxLayout()
-        widgets = [self.readButton, self.showButton, self.stopButton, self.label, self.tableWidget,
-                   self.xCombo, self.yCombo, self.plotButton]
+        widgets = [self.readButton, self.showButton, self.label, self.tableWidget,
+                   self.xComboLabel, self.xCombo, self.yComboLabel, self.yCombo, self.plotButton, self.stopButton]
         for widget in widgets:
             if widget == self.label:
                 widget.setMaximumWidth(300)
@@ -248,8 +259,14 @@ class App(QDialog):
         self.graphWidget.getAxis('bottom').setTextPen('k')
         self.graphWidget.getAxis('bottom').setFont(font)
 
-        layout = QHBoxLayout()
+        self.clearButton = QPushButton("& Clear chart")
+        self.clearButton.setStyleSheet("background-color: lightblue; border-color: black; font: bold 14px;")
+        self.clearButton.clicked.connect(self.clearGraph)
+        self.clearButton.setFixedWidth(150)
+
+        layout = QVBoxLayout()
         layout.addWidget(self.graphWidget)
+        layout.addWidget(self.clearButton, alignment=Qt.AlignmentFlag.AlignCenter)
         # layout.addStretch(1)
         self.resultingChartWidget.setLayout(layout)
 
