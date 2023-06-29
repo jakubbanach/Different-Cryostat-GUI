@@ -77,6 +77,8 @@ class App(QDialog):
         self.tableWidget.setRowCount(10)
         self.tableWidget.setColumnCount(5)
         self.showButton.setStyleSheet("background-color: white; border-color: black; font: bold 14px;")
+        self.newData.drop(self.newData.index, inplace=True)
+        self.pathToFile = ''
 
 
     def makeGraph(self):
@@ -110,7 +112,7 @@ class App(QDialog):
         fileName = self.pathToFile
         self.updateTextTable(fileName)
         if fileName != '':
-            self.allData = pd.read_csv(fileName, delimiter='[\t |,]', usecols=lambda x: x not in ['yyyy-mm-dd', 'hh:mm:ss.ccccc'], engine='python')
+            self.allData = pd.read_csv(fileName, delimiter='[\t |;]', usecols=lambda x: x not in ['yyyy-mm-dd', 'hh:mm:ss.ccccc'], engine='python')
             if self.allData.size == 0:
                 return
             self.allData.fillna('', inplace=True)
@@ -134,14 +136,33 @@ class App(QDialog):
                     self.tableItem = QTableWidgetItem(str(value))
                     self.tableWidget.setItem(row[0], col_index, self.tableItem)
 
+
+    def updateGraph1(self):
+        while self.isPlottingGoing:
+            self.makeGraph()
+            QGuiApplication.processEvents()
+            try:
+                print("initial rows: %d \n\n\n" % self.allData.shape[0])
+                self.newData = pd.read_csv(self.pathToFile, delimiter='[\t |;]',
+                                   usecols=lambda x: x not in ['yyyy-mm-dd', 'hh:mm:ss.ccccc'], engine='python',
+                                   skiprows=self.allData.shape[0], names=self.allData.columns)
+                if self.newData.size == 0:
+                    continue
+                self.allData = pd.concat([self.allData, self.newData], ignore_index=True)
+                # print(self.allData)
+                time.sleep(2)
+                # self.newData.drop(self.newData.index, inplace=True)
+            except:
+                raise ValueError("Error in reading data")
+
     def updateGraph(self):
-        self.makeGraph()
         QGuiApplication.processEvents()     #powoduje, ze wywoluje sie plot w funkcji
+        self.makeGraph()
         while self.isPlottingGoing:
             time.sleep(5)
             self.numbersOfRows = self.tableWidget.rowCount()
             try:
-                new_data = pd.read_csv(self.pathToFile, delimiter='[\t |,]', usecols=lambda x: x not in ['yyyy-mm-dd', 'hh:mm:ss.ccccc'], engine='python', skiprows=self.numbersOfRows, names=self.allData.columns)
+                new_data = pd.read_csv(self.pathToFile, delimiter='[\t |;]', usecols=lambda x: x not in ['yyyy-mm-dd', 'hh:mm:ss.ccccc'], engine='python', skiprows=self.numbersOfRows, names=self.allData.columns)
             except:
                 print("Error in reading new file")
                 time.sleep(10)
@@ -200,8 +221,8 @@ class App(QDialog):
         # ###Tu mozna sprobowac dodac wlasnie i ewentualnie w innych miejscach tego False
         #     self.isPlottingGoing = True
 
-        self.plotButton.clicked.connect(self.makeGraph)
-        #self.plotButton.clicked.connect(self.updateGraph)  #funkcja do odswiezania wykresow, na razie zakomentowana, zeby pozostale rzeczy dzialaly
+        # self.plotButton.clicked.connect(self.makeGraph)
+        self.plotButton.clicked.connect(self.updateGraph1)  #funkcja do odswiezania wykresow, na razie zakomentowana, zeby pozostale rzeczy dzialaly
         self.stopButton = QPushButton("&4. Stop")
         self.stopButton.clicked.connect(self.stopReadingFile)
         self.stopButton.setStyleSheet("background-color: red; border-color: black; font: bold 14px;")

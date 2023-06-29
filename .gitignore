@@ -1,2 +1,6 @@
 .idea/
 *.dat.txt.jpg.png.exe
+test-batch.py
+DATAPLOT.bat
+live_graph.py
+test_data.txt

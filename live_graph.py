@@ -1,34 +1,22 @@
-import matplotlib.pyplot as plt
-from PyQt6 import QtWidgets, QtCore
-import pyqtgraph as pg
 import numpy as np
-from random import *
+from time import sleep
 
+filename = "./test_data1.txt"
 
-class exampleGraph(pg.PlotWidget):
-    def __init__(self, *args, **kwargs):
-        super(exampleGraph, self).__init__(*args, **kwargs)
+header = "T_A[K] T_B[K] CNT sr860x[V] sr860y[V] sr860f[Hz] sr860sin[V]\n"
 
-        self.graphWidget = pg.PlotWidget()
+with open(filename, "w") as f:
+    f.write(header)
+    f.close()
 
-        self.x = list(range(100))  # 100 time points
-        self.y = [randint(0, 100) for _ in range(100)]  # 100 data points
+    k = 0
 
-        self.graphWidget.setBackground('w')
-
-        pen = pg.mkPen(color=(255, 0, 0))
-        self.data_line = self.graphWidget.plot(self.x, self.y, pen=pen)
-
-        self.timer = QtCore.QTimer()
-        self.timer.setInterval(50)
-        self.timer.timeout.connect(self.update_plot_data)
-        self.timer.start()
-
-    def update_plot_data(self):
-        self.x = self.x[1:]  # Remove the first y element.
-        self.x.append(self.x[-1] + 1)  # Add a new value 1 higher than the last.
-
-        self.y = self.y[1:]  # Remove the first
-        self.y.append(randint(0, 100))  # Add a new random value.
-
-        self.data_line.setData(self.x, self.y)  # Update the data.
+    while True:
+        i = np.random.rand()
+        line = "%.4f %.4f %d %.6f %.6f %.3f %.1f\n" % (300 + i, 300 - i, k, i, i ** 2, np.sqrt(i), np.sin(i))
+        k += 1
+        with open(filename, "a") as f:
+            f.write(line)
+            f.close()
+        print(line)
+        sleep(2)
